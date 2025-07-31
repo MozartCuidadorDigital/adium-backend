@@ -26,7 +26,7 @@ class TTSService {
     let processed = text.trim().replace(/\s+/g, ' ');
     
     // Limit text length for TTS (ElevenLabs has limits)
-    const maxLength = 1000; // Reduced from 500 to be safer
+    const maxLength = 2000; // Increased to handle longer responses
     if (processed.length > maxLength) {
       // Try to cut at a sentence boundary
       const sentences = processed.split(/[.!?]+/);

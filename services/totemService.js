@@ -19,6 +19,24 @@ class TotemService {
     try {
       console.log('🎯 Totem Service - Processing question:', userQuestion);
       
+      // Check for greeting messages
+      const normalizedQuestion = userQuestion.toLowerCase().trim();
+      if (normalizedQuestion === 'hola' || normalizedQuestion === 'hello' || normalizedQuestion === 'hi') {
+        const greetingResponse = 'Hola, ¿en qué puedo ayudarte hoy?';
+        console.log('👋 Greeting detected, returning standard response');
+        
+        // Generate audio for greeting
+        const audioResult = await this.ttsService.generateSpeechUrl(greetingResponse);
+        
+        return {
+          success: true,
+          text: greetingResponse,
+          audioUrl: audioResult.success ? audioResult.audioUrl : null,
+          searchResults: 0,
+          usage: null
+        };
+      }
+      
       // Step 1: Search for relevant information
       console.log('🔍 Step 1: Searching for relevant information...');
       const searchResults = await this.searchService.searchKnowledge(userQuestion, filter, 3);
@@ -54,14 +72,10 @@ class TotemService {
       // Step 4: Generate audio from the response
       console.log('🎵 Step 4: Generating audio...');
       
-      // Truncate response for TTS if too long
-      let ttsText = aiResponse.response;
-      if (ttsText.length > 800) {
-        // Take first few sentences for TTS
-        const sentences = ttsText.split(/[.!?]+/).slice(0, 3);
-        ttsText = sentences.join('. ') + '.';
-        console.log('📝 TTS text truncated to:', ttsText.length, 'characters');
-      }
+      // Use the complete response for TTS - no truncation
+      const ttsText = aiResponse.response;
+      console.log('📝 TTS text length:', ttsText.length, 'characters');
+      console.log('📝 TTS text preview:', ttsText.substring(0, 100) + '...');
       
       const audioResult = await this.ttsService.generateSpeechUrl(ttsText);
       
