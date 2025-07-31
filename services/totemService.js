@@ -70,7 +70,6 @@ class TotemService {
       }
 
       // Step 4: Generate audio from the response
-      console.log('🎵 Step 4: Generating audio...');
       
       // Use the complete response for TTS - no truncation
       const ttsText = aiResponse.response;
