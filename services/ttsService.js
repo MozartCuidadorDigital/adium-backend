@@ -25,9 +25,30 @@ class TTSService {
     // Remove extra whitespace and normalize
     let processed = text.trim().replace(/\s+/g, ' ');
     
-    // Limit text length for faster processing
-    if (processed.length > 500) {
-      processed = processed.substring(0, 500) + '...';
+    // Limit text length for TTS (ElevenLabs has limits)
+    const maxLength = 1000; // Reduced from 500 to be safer
+    if (processed.length > maxLength) {
+      // Try to cut at a sentence boundary
+      const sentences = processed.split(/[.!?]+/);
+      let truncated = '';
+      
+      for (const sentence of sentences) {
+        const trimmedSentence = sentence.trim();
+        if (!trimmedSentence) continue;
+        
+        if ((truncated + trimmedSentence + '.').length <= maxLength) {
+          truncated += (truncated ? ' ' : '') + trimmedSentence + '.';
+        } else {
+          break;
+        }
+      }
+      
+      if (truncated) {
+        processed = truncated;
+      } else {
+        // If no sentence fits, just truncate
+        processed = processed.substring(0, maxLength - 3) + '...';
+      }
     }
     
     return processed;
@@ -61,11 +82,24 @@ class TTSService {
 
       console.log('Generating speech for text:', processedText);
       
-      const audioBuffer = await elevenLabsConfig.textToSpeech(processedText, ttsOptions);
+      // Add timeout for TTS generation
+      const timeout = 30000; // 30 seconds
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
       
-      console.log(`Generated audio buffer of size: ${audioBuffer.length} bytes`);
-      
-      return audioBuffer;
+      try {
+        const audioBuffer = await elevenLabsConfig.textToSpeech(processedText, ttsOptions);
+        clearTimeout(timeoutId);
+        
+        console.log(`Generated audio buffer of size: ${audioBuffer.length} bytes`);
+        return audioBuffer;
+      } catch (error) {
+        clearTimeout(timeoutId);
+        if (error.name === 'AbortError') {
+          throw new Error('TTS generation timed out');
+        }
+        throw error;
+      }
 
     } catch (error) {
       console.error('Error generating speech:', error);
@@ -261,6 +295,42 @@ class TTSService {
     } catch (error) {
       console.error('Error generating speech for long text:', error);
       throw new Error(`Failed to generate speech for long text: ${error.message}`);
+    }
+  }
+
+  /**
+   * Generate speech and return a URL for the totem system
+   * @param {string} text - Text to convert to speech
+   * @param {Object} options - TTS options
+   * @returns {Promise<Object>} - Object with success status and audio URL
+   */
+  async generateSpeechUrl(text, options = {}) {
+    try {
+      console.log('🎵 TTS Service - Generating speech URL for:', text.substring(0, 50) + '...');
+      
+      // Generate the audio buffer
+      const audioBuffer = await this.generateSpeech(text, options);
+      
+      // Convert buffer to base64 data URL
+      const base64Audio = audioBuffer.toString('base64');
+      const audioUrl = `data:audio/mpeg;base64,${base64Audio}`;
+      
+      console.log('✅ TTS Service - Audio generated successfully');
+      
+      return {
+        success: true,
+        audioUrl: audioUrl,
+        audioBuffer: audioBuffer,
+        message: 'Audio generated successfully'
+      };
+
+    } catch (error) {
+      console.error('❌ TTS Service Error:', error);
+      return {
+        success: false,
+        error: error.message,
+        audioUrl: null
+      };
     }
   }
 }

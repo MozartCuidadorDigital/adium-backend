@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import ClientHandler from './sockets/clientHandler.js';
+import totemRoutes from './routes/totemRoutes.js';
 
 // Load environment variables
 dotenv.config();
@@ -26,6 +27,9 @@ app.use(express.static(join(__dirname, '../voice-agent-frontend/dist')));
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
+
+// Totem API routes
+app.use('/api/totem', totemRoutes);
 
 // WebSocket connection handling
 wss.on('connection', (ws, req) => {
@@ -74,6 +78,7 @@ server.listen(PORT, () => {
   console.log(`🚀 Voice Assistant Server running on port ${PORT}`);
   console.log(`📡 WebSocket server ready for connections`);
   console.log(`🌐 Health check available at http://localhost:${PORT}/health`);
+  console.log(`🎯 Totem API available at http://localhost:${PORT}/api/totem`);
 });
 
 // Graceful shutdown
