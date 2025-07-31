@@ -1,0 +1,38 @@
+name: Deploy Backend to EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📦 Checkout repo
+        uses: actions/checkout@v4
+
+      - name: 🚀 Deploy to EC2 via SSH
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd ~/adium-backend
+
+            echo "📥 Haciendo pull de la última versión..."
+            git pull origin main
+
+            echo "📄 Escribiendo archivo .env..."
+            cat > .env <<EOF
+            ${{ secrets.BACKEND_ENV }}
+            EOF
+
+            echo "📦 Instalando dependencias..."
+            npm install
+
+            echo "🔁 Reiniciando backend con PM2..."
+            pm2 restart adium-backend || pm2 start server.js --name adium-backend
+            pm2 save
