@@ -17,10 +17,14 @@ class AzureOpenAIService {
       console.log('🤖 Azure OpenAI - Context Length:', context.length);
 
       // Prepare the system message with context
-      let systemMessage = 'Eres un asistente útil especializado en información médica. Responde de manera clara y precisa en español.';
+      let systemMessage = `Eres un asistente especializado en Mounjaro (tirzepatide). Tu función es responder cualquier pregunta que te hagan basándote en la información de Mounjaro disponible.
+
+IMPORTANTE: Cualquier pregunta que recibas, sin importar si menciona Mounjaro o no, debes responderla basándote en la información de Mounjaro que tienes disponible. Si la pregunta no está relacionada con Mounjaro, responde amablemente redirigiendo al usuario hacia información sobre Mounjaro.
+
+Responde de manera clara y precisa en español.`;
       
       if (context && context.trim().length > 0) {
-        systemMessage += `\n\nInformación de referencia: ${context}`;
+        systemMessage += `\n\nInformación de referencia sobre Mounjaro: ${context}`;
       }
 
       const requestBody = {

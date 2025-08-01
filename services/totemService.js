@@ -1,12 +1,61 @@
 import azureSearchService from './azureSearchService.js';
 import azureOpenAIService from './azureOpenAIService.js';
 import TTSService from './ttsService.js';
+import queryValidationService from './queryValidationService.js';
 
 class TotemService {
   constructor() {
     this.searchService = azureSearchService;
     this.openAIService = azureOpenAIService;
     this.ttsService = new TTSService();
+    this.queryValidationService = queryValidationService;
+  }
+
+  /**
+   * Format text response for better readability in frontend
+   * @param {string} text - Raw text from OpenAI
+   * @returns {string} - Formatted text with proper structure
+   */
+  formatTextResponse(text) {
+    if (!text) return text;
+
+    let formattedText = text;
+
+    // Add line breaks after periods that end sentences
+    formattedText = formattedText.replace(/\.\s+/g, '.\n\n');
+    
+    // Add line breaks after question marks
+    formattedText = formattedText.replace(/\?\s+/g, '?\n\n');
+    
+    // Add line breaks after exclamation marks
+    formattedText = formattedText.replace(/!\s+/g, '!\n\n');
+    
+    // Add line breaks after colons
+    formattedText = formattedText.replace(/:\s+/g, ':\n\n');
+    
+    // Add line breaks after semicolons
+    formattedText = formattedText.replace(/;\s+/g, ';\n\n');
+    
+    // Format lists (lines that start with - or •)
+    formattedText = formattedText.replace(/^\s*[-•]\s+/gm, '\n• ');
+    
+    // Format numbered lists
+    formattedText = formattedText.replace(/^\s*(\d+)\.\s+/gm, '\n$1. ');
+    
+    // Add spacing around important keywords
+    const keywords = ['Mounjaro', 'diabetes', 'efectos secundarios', 'contraindicaciones', 'dosis', 'administración'];
+    keywords.forEach(keyword => {
+      const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
+      formattedText = formattedText.replace(regex, `**${keyword}**`);
+    });
+    
+    // Clean up excessive line breaks
+    formattedText = formattedText.replace(/\n{3,}/g, '\n\n');
+    
+    // Remove leading/trailing whitespace
+    formattedText = formattedText.trim();
+    
+    return formattedText;
   }
 
   /**
@@ -21,16 +70,16 @@ class TotemService {
       
       // Check for greeting messages
       const normalizedQuestion = userQuestion.toLowerCase().trim();
-      if (normalizedQuestion === 'hola' || normalizedQuestion === 'hello' || normalizedQuestion === 'hi') {
-        const greetingResponse = 'Hola, ¿en qué puedo ayudarte hoy?';
-        console.log('👋 Greeting detected, returning standard response');
+      if (this.queryValidationService.isGreeting(normalizedQuestion)) {
+        const greetingResponse = 'Hola, soy tu asistente especializado en Mounjaro. ¿En qué puedo ayudarte hoy?';
+        console.log('👋 Greeting detected, returning Mounjaro-focused response');
         
         // Generate audio for greeting
         const audioResult = await this.ttsService.generateSpeechUrl(greetingResponse);
         
         return {
           success: true,
-          text: greetingResponse,
+          text: this.formatTextResponse(greetingResponse),
           audioUrl: audioResult.success ? audioResult.audioUrl : null,
           searchResults: 0,
           usage: null
@@ -69,10 +118,8 @@ class TotemService {
         };
       }
 
-      // Step 4: Generate audio from the response
-      
-      // Use the complete response for TTS - no truncation
-      const ttsText = aiResponse.response;
+      // Step 4: Generate audio from the response (use original text for TTS)
+      const ttsText = aiResponse.response; // Use original text for audio
       console.log('📝 TTS text length:', ttsText.length, 'characters');
       console.log('📝 TTS text preview:', ttsText.substring(0, 100) + '...');
       
@@ -82,7 +129,7 @@ class TotemService {
         console.error('❌ Audio generation failed:', audioResult.error);
         return {
           success: true, // Still return text even if audio fails
-          text: aiResponse.response,
+          text: this.formatTextResponse(aiResponse.response), // Format text for frontend
           audioUrl: null,
           warning: 'Respuesta generada pero no se pudo crear el audio.'
         };
@@ -92,7 +139,7 @@ class TotemService {
       
       return {
         success: true,
-        text: aiResponse.response,
+        text: this.formatTextResponse(aiResponse.response), // Format text for frontend
         audioUrl: audioResult.audioUrl,
         searchResults: searchResults.results.length,
         usage: aiResponse.usage
