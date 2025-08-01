@@ -9,15 +9,17 @@ class AzureOpenAIService {
    * Generate a response using Azure OpenAI
    * @param {string} userMessage - The user's message
    * @param {string} context - Additional context from search results
+   * @param {string} specificPrompt - Optional specific prompt to use instead of the general one
    * @returns {Promise<Object>} - OpenAI response
    */
-  async generateResponse(userMessage, context = '') {
+  async generateResponse(userMessage, context = '', specificPrompt = null) {
     try {
       console.log('🤖 Azure OpenAI - User Message:', userMessage);
       console.log('🤖 Azure OpenAI - Context Length:', context.length);
+      console.log('🤖 Azure OpenAI - Using specific prompt:', !!specificPrompt);
 
       // Prepare the system message with context
-      let systemMessage = `Eres un asistente especializado en Mounjaro (tirzepatide). Tu función es responder cualquier pregunta que te hagan basándote en la información de Mounjaro disponible.
+      let systemMessage = specificPrompt || `Eres un asistente especializado en Mounjaro (tirzepatide). Tu función es responder cualquier pregunta que te hagan basándote en la información de Mounjaro disponible.
 
 IMPORTANTE: Cualquier pregunta que recibas, sin importar si menciona Mounjaro o no, debes responderla basándote en la información de Mounjaro que tienes disponible. Si la pregunta no está relacionada con Mounjaro, responde amablemente redirigiendo al usuario hacia información sobre Mounjaro.
 
