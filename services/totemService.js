@@ -118,6 +118,7 @@ class TotemService {
         };
       }
 
+      
       // Step 4: Generate audio from the response (use original text for TTS)
       const ttsText = aiResponse.response; // Use original text for audio
       console.log('📝 TTS text length:', ttsText.length, 'characters');
