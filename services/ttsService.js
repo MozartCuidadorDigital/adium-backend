@@ -13,6 +13,83 @@ class TTSService {
   }
 
   /**
+   * Correct pronunciation for specific words before TTS generation
+   * @param {string} text - Raw text
+   * @returns {string} - Text with pronunciation corrections
+   */
+  correctPronunciation(text) {
+    if (!text) return text;
+
+    let correctedText = text;
+
+    // Corrección 1: Mounjaro -> Mounyaro (con Y)
+    correctedText = correctedText.replace(/Mounjaro/gi, 'Mounyaro');
+    correctedText = correctedText.replace(/mounjaro/gi, 'mounyaro');
+
+    // Corrección 2: mg/ml -> miligramos por mililitro (DEBE IR ANTES que las correcciones individuales)
+    correctedText = correctedText.replace(/\bmg\/ml\b/gi, 'miligramos por mililitro');
+    correctedText = correctedText.replace(/\bmg\/mL\b/gi, 'miligramos por mililitro');
+
+    // Corrección 3: mcg/ml -> microgramos por mililitro
+    correctedText = correctedText.replace(/\bmcg\/ml\b/gi, 'microgramos por mililitro');
+    correctedText = correctedText.replace(/\bmcg\/mL\b/gi, 'microgramos por mililitro');
+
+    // Corrección 4: U/ml -> Unidades por mililitro
+    correctedText = correctedText.replace(/\bU\/ml\b/gi, 'Unidades por mililitro');
+    correctedText = correctedText.replace(/\bU\/mL\b/gi, 'Unidades por mililitro');
+
+    // Corrección 5: Ml -> Mililitros (después de las combinaciones)
+    correctedText = correctedText.replace(/\bMl\b/g, 'Mililitros');
+    correctedText = correctedText.replace(/\bml\b/g, 'mililitros');
+    correctedText = correctedText.replace(/\bML\b/g, 'Mililitros');
+
+    // Corrección 6: Mg -> Miligramos (después de las combinaciones)
+    correctedText = correctedText.replace(/\bMg\b/g, 'Miligramos');
+    correctedText = correctedText.replace(/\bmg\b/g, 'miligramos');
+    correctedText = correctedText.replace(/\bMG\b/g, 'Miligramos');
+
+    // Corrección 7: mcg -> microgramos
+    correctedText = correctedText.replace(/\bmcg\b/gi, 'microgramos');
+
+    // Corrección 8: U -> Unidades
+    correctedText = correctedText.replace(/\bU\b/g, 'Unidades');
+    correctedText = correctedText.replace(/\bu\b/g, 'unidades');
+
+    // Corrección 9: % -> por ciento
+    correctedText = correctedText.replace(/(\d+)%/g, '$1 por ciento');
+
+    // Corrección 10: + -> más
+    correctedText = correctedText.replace(/\s\+\s/g, ' más ');
+
+    // Corrección 11: - -> menos
+    correctedText = correctedText.replace(/\s-\s/g, ' menos ');
+
+    // Corrección 12: = -> igual a
+    correctedText = correctedText.replace(/\s=\s/g, ' igual a ');
+
+    // Corrección 13: < -> menor que
+    correctedText = correctedText.replace(/\s<\s/g, ' menor que ');
+
+    // Corrección 14: > -> mayor que
+    correctedText = correctedText.replace(/\s>\s/g, ' mayor que ');
+
+    // Corrección 15: ± -> más menos
+    correctedText = correctedText.replace(/\s±\s/g, ' más menos ');
+
+    // Corrección 16: / -> por (cuando está entre números, pero no en combinaciones ya procesadas)
+    correctedText = correctedText.replace(/(\d+)\/(\d+)/g, '$1 por $2');
+
+    // Corrección 17: Tirzepatida -> Tirzepatida (asegurar pronunciación correcta)
+    correctedText = correctedText.replace(/Tirzepatida/gi, 'Tirzepatida');
+
+    console.log('🔊 Pronunciation corrections applied');
+    console.log('📝 Original text preview:', text.substring(0, 100) + '...');
+    console.log('📝 Corrected text preview:', correctedText.substring(0, 100) + '...');
+
+    return correctedText;
+  }
+
+  /**
    * Preprocess text for faster TTS generation
    * @param {string} text - Raw text
    * @returns {string} - Processed text
@@ -22,8 +99,11 @@ class TTSService {
       throw new Error('Text cannot be empty');
     }
     
+    // Apply pronunciation corrections first
+    let processed = this.correctPronunciation(text);
+    
     // Remove extra whitespace and normalize
-    let processed = text.trim().replace(/\s+/g, ' ');
+    processed = processed.trim().replace(/\s+/g, ' ');
     
     // Limit text length for TTS (ElevenLabs has limits)
     const maxLength = 2000; // Increased to handle longer responses
