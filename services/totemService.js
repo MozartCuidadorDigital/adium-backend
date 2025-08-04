@@ -86,10 +86,29 @@ class TotemService {
           usage: null
         };
       }
+
+      // Check if this question matches a predefined question
+      const predefinedQuestions = this.getPredefinedQuestions();
+      let matchedPredefinedQuestion = null;
+      
+      for (const predefined of predefinedQuestions) {
+        // Check for exact match with the question field (what frontend sends)
+        if (userQuestion.toLowerCase().trim() === predefined.question.toLowerCase().trim()) {
+          matchedPredefinedQuestion = predefined;
+          break;
+        }
+      }
+
+      // If we found a match and no specific prompt was provided, use the predefined prompt
+      if (matchedPredefinedQuestion && !specificPrompt) {
+        specificPrompt = matchedPredefinedQuestion.prompt;
+        console.log(`🎯 Matched predefined question: ${matchedPredefinedQuestion.id}`);
+        console.log(`📝 Using specific prompt for: ${matchedPredefinedQuestion.text}`);
+      }
       
       // Step 1: Search for relevant information
       console.log('🔍 Step 1: Searching for relevant information...');
-      const searchResults = await this.searchService.searchKnowledge(userQuestion, filter, 3);
+      const searchResults = await this.searchService.searchKnowledge(userQuestion, filter, 5); // Aumentado de 3 a 5
       
       if (!searchResults.success) {
         console.error('❌ Search failed:', searchResults.error);
@@ -161,7 +180,7 @@ class TotemService {
    * Get predefined questions for the totem interface
    * @returns {Array} - List of predefined questions
    */
-  getPredefinedQuestions() {
+   getPredefinedQuestions() {
     return [
       {
         id: 'que-es-mounjaro',
