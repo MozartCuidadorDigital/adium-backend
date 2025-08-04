@@ -26,6 +26,10 @@ class TTSService {
     correctedText = correctedText.replace(/Mounjaro/gi, 'Mounyaro');
     correctedText = correctedText.replace(/mounjaro/gi, 'mounyaro');
 
+    // Corrección 2: GIP -> G I P (deletreo para evitar "GIPE")
+    correctedText = correctedText.replace(/\bGIP\b/g, 'G I P');
+    correctedText = correctedText.replace(/\bgip\b/g, 'g i p');
+
     // Corrección 2: mg/ml -> miligramos por mililitro (DEBE IR ANTES que las correcciones individuales)
     correctedText = correctedText.replace(/\bmg\/ml\b/gi, 'miligramos por mililitro');
     correctedText = correctedText.replace(/\bmg\/mL\b/gi, 'miligramos por mililitro');
