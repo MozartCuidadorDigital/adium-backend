@@ -22,6 +22,28 @@ class TTSService {
 
     let correctedText = text;
 
+    // Remove problematic bullet points and list markers first (more aggressive)
+    correctedText = correctedText.replace(/^\s*[•·▪▫]\s*/gm, ''); // Remove bullet points at start of lines
+    correctedText = correctedText.replace(/\s*[•·▪▫]\s*/g, ' '); // Remove bullet points anywhere
+    correctedText = correctedText.replace(/^\s*[-–—]\s*/gm, ''); // Remove dashes at start of lines
+    correctedText = correctedText.replace(/\s*[-–—]\s*/g, ' '); // Remove dashes anywhere
+    
+    // Remove any remaining bullet-like characters
+    correctedText = correctedText.replace(/^\s*[▪▫▬▭▮▯]/gm, ''); // Remove other bullet characters
+    correctedText = correctedText.replace(/\s*[▪▫▬▭▮▯]\s*/g, ' '); // Remove other bullet characters anywhere
+    
+    // Additional aggressive cleaning for any remaining problematic characters
+    correctedText = correctedText.replace(/^\s*[○●◐◑◒◓◔◕]/gm, ''); // Remove more bullet types
+    correctedText = correctedText.replace(/\s*[○●◐◑◒◓◔◕]\s*/g, ' '); // Remove more bullet types anywhere
+    
+    // Remove any character that might be interpreted as a bullet
+    correctedText = correctedText.replace(/^\s*[▪▫▬▭▮▯○●◐◑◒◓◔◕•·]/gm, ''); // Remove all bullet types at start
+    correctedText = correctedText.replace(/\s*[▪▫▬▭▮▯○●◐◑◒◓◔◕•·]\s*/g, ' '); // Remove all bullet types anywhere
+
+    // Clean up line breaks that cause pronunciation issues
+    correctedText = correctedText.replace(/\n\s*\n/g, '. '); // Replace double line breaks with period
+    correctedText = correctedText.replace(/\n/g, ' '); // Replace single line breaks with space
+
     // Corrección 1: Mounjaro -> Mounyaro (con Y)
     correctedText = correctedText.replace(/Mounjaro/gi, 'Mounyaro');
     correctedText = correctedText.replace(/mounjaro/gi, 'mounyaro');
@@ -62,6 +84,12 @@ class TTSService {
     // Corrección 9: % -> por ciento
     correctedText = correctedText.replace(/(\d+)%/g, '$1 por ciento');
 
+    // Corrección 9.5: Decimales con % -> agregar "punto" para mejor pronunciación
+    correctedText = correctedText.replace(/(\d+)\.(\d+)%/g, '$1 punto $2 por ciento');
+    
+    // Corrección 9.6: Decimales sin % -> agregar "punto" para mejor pronunciación
+    correctedText = correctedText.replace(/(\d+)\.(\d+)/g, '$1 punto $2');
+
     // Corrección 10: + -> más
     correctedText = correctedText.replace(/\s\+\s/g, ' más ');
 
@@ -86,6 +114,9 @@ class TTSService {
     // Corrección 17: Tirzepatida -> Tirzepatida (asegurar pronunciación correcta)
     correctedText = correctedText.replace(/Tirzepatida/gi, 'Tirzepatida');
 
+    // Clean up excessive spaces after all corrections
+    correctedText = correctedText.replace(/\s+/g, ' ');
+
     console.log('🔊 Pronunciation corrections applied');
     console.log('📝 Original text preview:', text.substring(0, 100) + '...');
     console.log('📝 Corrected text preview:', correctedText.substring(0, 100) + '...');
@@ -106,11 +137,14 @@ class TTSService {
     // Apply pronunciation corrections first
     let processed = this.correctPronunciation(text);
     
+    // Clean up problematic characters and formatting for TTS
+    processed = this.cleanTextForTTS(processed);
+    
     // Remove extra whitespace and normalize
     processed = processed.trim().replace(/\s+/g, ' ');
     
     // Limit text length for TTS (ElevenLabs has limits)
-    const maxLength = 2000; // Increased to handle longer responses
+    const maxLength = 4000; // Increased from 2000 to handle longer responses
     if (processed.length > maxLength) {
       // Try to cut at a sentence boundary
       const sentences = processed.split(/[.!?]+/);
@@ -136,6 +170,87 @@ class TTSService {
     }
     
     return processed;
+  }
+
+  /**
+   * Clean text for better TTS pronunciation
+   * @param {string} text - Raw text
+   * @returns {string} - Cleaned text
+   */
+  cleanTextForTTS(text) {
+    if (!text) return text;
+
+    let cleaned = text;
+
+    // Remove ALL bullet points and list markers (more aggressive)
+    cleaned = cleaned.replace(/^\s*[•·▪▫]\s*/gm, ''); // Remove bullet points at start of lines
+    cleaned = cleaned.replace(/\s*[•·▪▫]\s*/g, ' '); // Remove bullet points anywhere
+    cleaned = cleaned.replace(/^\s*[-–—]\s*/gm, ''); // Remove dashes at start of lines
+    cleaned = cleaned.replace(/\s*[-–—]\s*/g, ' '); // Remove dashes anywhere
+    
+    // Remove any remaining bullet-like characters
+    cleaned = cleaned.replace(/^\s*[▪▫▬▭▮▯]/gm, ''); // Remove other bullet characters
+    cleaned = cleaned.replace(/\s*[▪▫▬▭▮▯]\s*/g, ' '); // Remove other bullet characters anywhere
+    
+    // Additional aggressive cleaning for any remaining problematic characters
+    cleaned = cleaned.replace(/^\s*[○●◐◑◒◓◔◕]/gm, ''); // Remove more bullet types
+    cleaned = cleaned.replace(/\s*[○●◐◑◒◓◔◕]\s*/g, ' '); // Remove more bullet types anywhere
+    
+    // Remove any character that might be interpreted as a bullet
+    cleaned = cleaned.replace(/^\s*[▪▫▬▭▮▯○●◐◑◒◓◔◕•·]/gm, ''); // Remove all bullet types at start
+    cleaned = cleaned.replace(/\s*[▪▫▬▭▮▯○●◐◑◒◓◔◕•·]\s*/g, ' '); // Remove all bullet types anywhere
+    
+    // Replace numbered lists with proper formatting
+    cleaned = cleaned.replace(/^\s*(\d+)\.\s*/gm, '$1. '); // Format numbered lists
+    
+    // Clean up multiple line breaks and replace with proper spacing
+    cleaned = cleaned.replace(/\n\s*\n/g, '. '); // Replace double line breaks with period
+    cleaned = cleaned.replace(/\n/g, ' '); // Replace single line breaks with space
+    
+    // Clean up excessive spaces
+    cleaned = cleaned.replace(/\s+/g, ' '); // Multiple spaces to single space
+    
+    // Clean up section headers (remove colons and format properly)
+    cleaned = cleaned.replace(/^([^:]+):\s*$/gm, '$1.'); // Remove colons at end of lines
+    cleaned = cleaned.replace(/([^:]+):\s+/g, '$1. '); // Replace colons with periods
+    
+    // Remove empty lines and excessive spacing
+    cleaned = cleaned.replace(/^\s*$/gm, ''); // Remove empty lines
+    cleaned = cleaned.replace(/\s{2,}/g, ' '); // Multiple spaces to single
+    
+    // Ensure proper sentence endings
+    cleaned = cleaned.replace(/([.!?])\s*([A-Z])/g, '$1 $2'); // Space after sentence endings
+    
+    // Handle accented characters for better pronunciation (keep them but ensure proper encoding)
+    // Don't remove tildes, just ensure they're properly handled
+    cleaned = cleaned.replace(/á/g, 'á');
+    cleaned = cleaned.replace(/é/g, 'é');
+    cleaned = cleaned.replace(/í/g, 'í');
+    cleaned = cleaned.replace(/ó/g, 'ó');
+    cleaned = cleaned.replace(/ú/g, 'ú');
+    cleaned = cleaned.replace(/ñ/g, 'ñ');
+    cleaned = cleaned.replace(/ü/g, 'ü');
+    
+    // Handle uppercase accented characters too
+    cleaned = cleaned.replace(/Á/g, 'Á');
+    cleaned = cleaned.replace(/É/g, 'É');
+    cleaned = cleaned.replace(/Í/g, 'Í');
+    cleaned = cleaned.replace(/Ó/g, 'Ó');
+    cleaned = cleaned.replace(/Ú/g, 'Ú');
+    cleaned = cleaned.replace(/Ñ/g, 'Ñ');
+    cleaned = cleaned.replace(/Ü/g, 'Ü');
+    
+    // Remove any remaining problematic characters (but keep accented letters)
+    cleaned = cleaned.replace(/[^\w\s.,!?;:()%+\-áéíóúñüÁÉÍÓÚÑÜ]/g, ' '); // Keep accented characters
+    
+    // Final cleanup of multiple spaces
+    cleaned = cleaned.replace(/\s+/g, ' ').trim();
+    
+    console.log('🧹 Text cleaned for TTS');
+    console.log('📝 Original preview:', text.substring(0, 100) + '...');
+    console.log('📝 Cleaned preview:', cleaned.substring(0, 100) + '...');
+    
+    return cleaned;
   }
 
   /**
@@ -166,8 +281,8 @@ class TTSService {
 
       console.log('Generating speech for text:', processedText);
       
-      // Add timeout for TTS generation
-      const timeout = 30000; // 30 seconds
+      // Add timeout for TTS generation - increased for longer responses
+      const timeout = 90000; // 90 seconds (increased from 30)
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), timeout);
       
@@ -383,6 +498,59 @@ class TTSService {
   }
 
   /**
+   * Generate speech for long responses with extended timeout
+   * @param {string} text - Text to convert to speech
+   * @param {Object} options - TTS options
+   * @returns {Promise<Buffer>} - Audio buffer
+   */
+  async generateSpeechForLongResponse(text, options = {}) {
+    try {
+      console.log('🎵 Generating speech for long response:', text.substring(0, 100) + '...');
+      
+      // Preprocess text for faster processing
+      const processedText = this.preprocessText(text);
+      
+      // Use optimized settings for long responses
+      const ttsOptions = {
+        voice_id: options.voice_id || this.voiceId,
+        model_id: options.model_id || this.modelId,
+        voice_settings: {
+          stability: 0.5,        // Keep low to save tokens
+          similarity_boost: 0.75, // Keep balanced
+          style: 0.0,            // Disabled for speed
+          use_speaker_boost: false // Disabled for speed
+        },
+        ...options
+      };
+
+      console.log('🎵 Generating speech for long text:', processedText.substring(0, 100) + '...');
+      
+      // Extended timeout for long responses
+      const timeout = 120000; // 120 seconds for very long responses
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
+      
+      try {
+        const audioBuffer = await elevenLabsConfig.textToSpeech(processedText, ttsOptions);
+        clearTimeout(timeoutId);
+        
+        console.log(`🎵 Generated audio buffer for long response: ${audioBuffer.length} bytes`);
+        return audioBuffer;
+      } catch (error) {
+        clearTimeout(timeoutId);
+        if (error.name === 'AbortError') {
+          throw new Error('TTS generation for long response timed out');
+        }
+        throw error;
+      }
+
+    } catch (error) {
+      console.error('❌ Error generating speech for long response:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Generate speech and return a URL for the totem system
    * @param {string} text - Text to convert to speech
    * @param {Object} options - TTS options
@@ -392,8 +560,16 @@ class TTSService {
     try {
       console.log('🎵 TTS Service - Generating speech URL for:', text.substring(0, 50) + '...');
       
-      // Generate the audio buffer
-      const audioBuffer = await this.generateSpeech(text, options);
+      // Determine if this is a long response that needs special handling
+      const isLongResponse = text.length > 1500; // Threshold for long responses
+      
+      let audioBuffer;
+      if (isLongResponse) {
+        console.log('🎵 Detected long response, using extended timeout...');
+        audioBuffer = await this.generateSpeechForLongResponse(text, options);
+      } else {
+        audioBuffer = await this.generateSpeech(text, options);
+      }
       
       // Convert buffer to base64 data URL
       const base64Audio = audioBuffer.toString('base64');
