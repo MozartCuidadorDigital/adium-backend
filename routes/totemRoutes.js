@@ -18,6 +18,13 @@ router.post('/question', totemController.processQuestion);
 router.get('/questions', totemController.getPredefinedQuestions);
 
 /**
+ * @route GET /api/totem/tirzepatida-questions
+ * @desc Get tirzepatida specific questions for the menu
+ * @access Public
+ */
+router.get('/tirzepatida-questions', totemController.getTirzepatidaQuestions);
+
+/**
  * @route GET /api/totem/health
  * @desc Health check for totem services
  * @access Public

@@ -73,6 +73,29 @@ class TotemController {
   }
 
   /**
+   * Get tirzepatida specific questions
+   * @param {Object} req - Express request object
+   * @param {Object} res - Express response object
+   */
+  async getTirzepatidaQuestions(req, res) {
+    try {
+      const questions = totemService.getTirzepatidaQuestions();
+      
+      return res.json({
+        success: true,
+        questions: questions
+      });
+
+    } catch (error) {
+      console.error('❌ Get Tirzepatida Questions Error:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Error al obtener las preguntas de tirzepatida'
+      });
+    }
+  }
+
+  /**
    * Process a predefined question by ID
    * @param {Object} req - Express request object
    * @param {Object} res - Express response object

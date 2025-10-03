@@ -127,9 +127,9 @@ class TTSService {
   /**
    * Preprocess text for faster TTS generation
    * @param {string} text - Raw text
-   * @returns {string} - Processed text
+   * @returns {Promise<string>} - Processed text
    */
-  preprocessText(text) {
+  async preprocessText(text) {
     if (!text || text.trim().length === 0) {
       throw new Error('Text cannot be empty');
     }
@@ -138,7 +138,7 @@ class TTSService {
     let processed = this.correctPronunciation(text);
     
     // Clean up problematic characters and formatting for TTS
-    processed = this.cleanTextForTTS(processed);
+    processed = await this.cleanTextForTTS(processed);
     
     // Remove extra whitespace and normalize
     processed = processed.trim().replace(/\s+/g, ' ');
@@ -177,10 +177,24 @@ class TTSService {
    * @param {string} text - Raw text
    * @returns {string} - Cleaned text
    */
-  cleanTextForTTS(text) {
+  /**
+   * Convert medical terminology to TTS-friendly text
+   * @param {string} text - Text containing medical terms
+   * @returns {Promise<string>} - Text with medical terms converted for better pronunciation
+   */
+  async convertMedicalTerminology(text) {
     if (!text) return text;
 
-    let cleaned = text;
+    // Import the medical terminology configuration
+    const { convertMedicalTerminology } = await import('../config/medicalTerminology.js');
+    return convertMedicalTerminology(text);
+  }
+
+  async cleanTextForTTS(text) {
+    if (!text) return text;
+
+    // First convert medical terminology
+    let cleaned = await this.convertMedicalTerminology(text);
 
     // Remove ALL bullet points and list markers (more aggressive)
     cleaned = cleaned.replace(/^\s*[•·▪▫]\s*/gm, ''); // Remove bullet points at start of lines
@@ -240,7 +254,14 @@ class TTSService {
     cleaned = cleaned.replace(/Ñ/g, 'Ñ');
     cleaned = cleaned.replace(/Ü/g, 'Ü');
     
-    // Remove any remaining problematic characters (but keep accented letters)
+    // Handle specific medical characters before general cleanup
+    cleaned = cleaned.replace(/–/g, ' a '); // Replace en-dash with 'a'
+    cleaned = cleaned.replace(/—/g, ' a '); // Replace em-dash with 'a'
+    cleaned = cleaned.replace(/−/g, ' menos '); // Replace minus sign with 'menos'
+    cleaned = cleaned.replace(/<54 mg\/dL/g, 'menor a 54 miligramos por decilitro'); // Specific medical range
+    cleaned = cleaned.replace(/eventos\/paciente-año/g, 'eventos por paciente año'); // Medical frequency
+    
+    // Remove any remaining problematic characters (but keep accented letters and common medical symbols)
     cleaned = cleaned.replace(/[^\w\s.,!?;:()%+\-áéíóúñüÁÉÍÓÚÑÜ]/g, ' '); // Keep accented characters
     
     // Final cleanup of multiple spaces
@@ -264,7 +285,7 @@ class TTSService {
       console.log('Generating speech for:', text);
       
       // Preprocess text for faster processing
-      const processedText = this.preprocessText(text);
+      const processedText = await this.preprocessText(text);
       
       // Use optimized settings for faster response
       const ttsOptions = {
@@ -476,7 +497,7 @@ class TTSService {
       const audioBuffers = [];
 
       for (const chunk of chunks) {
-        const processedChunk = this.preprocessText(chunk);
+        const processedChunk = await this.preprocessText(chunk);
         if (processedChunk) {
           const audioBuffer = await this.generateSpeech(processedChunk, options);
           audioBuffers.push(audioBuffer);
@@ -508,7 +529,7 @@ class TTSService {
       console.log('🎵 Generating speech for long response:', text.substring(0, 100) + '...');
       
       // Preprocess text for faster processing
-      const processedText = this.preprocessText(text);
+      const processedText = await this.preprocessText(text);
       
       // Use optimized settings for long responses
       const ttsOptions = {
