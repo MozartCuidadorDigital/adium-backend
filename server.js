@@ -7,6 +7,7 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import ClientHandler from './sockets/clientHandler.js';
 import totemRoutes from './routes/totemRoutes.js';
+import tirzepatidaStudiesRoutes from './routes/tirzepatidaStudiesRoutes.js';
 
 // Load environment variables
 dotenv.config();
@@ -30,6 +31,9 @@ app.get('/health', (req, res) => {
 
 // Totem API routes
 app.use('/api/totem', totemRoutes);
+
+// Tirzepatida Studies API routes (separate service)
+app.use('/api/tirzepatida-studies', tirzepatidaStudiesRoutes);
 
 // WebSocket connection handling
 wss.on('connection', (ws, req) => {
@@ -79,6 +83,7 @@ server.listen(PORT, () => {
   console.log(`📡 WebSocket server ready for connections`);
   console.log(`🌐 Health check available at http://localhost:${PORT}/health`);
   console.log(`🎯 Totem API available at http://localhost:${PORT}/api/totem`);
+  console.log(`📊 Tirzepatida Studies API available at http://localhost:${PORT}/api/tirzepatida-studies`);
 });
 
 // Graceful shutdown
